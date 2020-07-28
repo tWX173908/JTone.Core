@@ -404,3 +404,7 @@ RemoteSystemsTempFiles/
 .idea/.idea/
 UPfiles/
 UploadX/
+/src/JTone.Core/obj
+/src/JTone.Core/bin
+bin
+obj
