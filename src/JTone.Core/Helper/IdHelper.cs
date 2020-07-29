@@ -14,7 +14,7 @@ namespace JTone.Core.Helper
     /// 12bit作为毫秒内的流水号（意味着每个节点在每毫秒可以产生 4096 个 ID），
     /// 最后还有一个符号位，永远是0。
     /// </remarks>
-    public class IdHelper
+    public class TimeIdHelper
     {
 
     }
@@ -63,33 +63,33 @@ namespace JTone.Core.Helper
 
         public SnowFlakeIdWorker(long workerId, long datacenterId, long sequence = 0L)
         {
-            // 如果超出范围就抛出异常
             if (workerId > MaxWorkerId || workerId < 0)
             {
-                throw new ArgumentException(string.Format("worker Id 必须大于0，且不能大于MaxWorkerId： {0}", MaxWorkerId));
+                throw new ArgumentException($"worker Id 必须大于0，且不能大于MaxWorkerId： {MaxWorkerId}");
             }
 
             if (datacenterId > MaxDatacenterId || datacenterId < 0)
             {
-                throw new ArgumentException(string.Format("region Id 必须大于0，且不能大于MaxWorkerId： {0}", MaxDatacenterId));
+                throw new ArgumentException($"region Id 必须大于0，且不能大于MaxWorkerId： {MaxDatacenterId}");
             }
 
-            //先检验再赋值
             WorkerId = workerId;
             DatacenterId = datacenterId;
             _sequence = sequence;
         }
 
         readonly object _lock = new object();
-        public virtual long NextId()
+
+
+        /// <summary>
+        /// 生产id
+        /// </summary>
+        /// <returns></returns>
+        public long NextId()
         {
             lock (_lock)
             {
-                var timestamp = TimeGen();
-                if (timestamp < _lastTimestamp)
-                {
-                    throw new System.Exception(string.Format("时间戳必须大于上一次生成ID的时间戳.  拒绝为{0}毫秒生成id", _lastTimestamp - timestamp));
-                }
+                var timestamp = TilNextMillis(_lastTimestamp);
 
                 //如果上次生成时间和当前时间相同,在同一毫秒内
                 if (_lastTimestamp == timestamp)
@@ -99,7 +99,6 @@ namespace JTone.Core.Helper
                     //判断是否溢出,也就是每毫秒内超过1024，当为1024时，与sequenceMask相与，sequence就等于0
                     if (_sequence == 0)
                     {
-                        //等待到下一毫秒
                         timestamp = TilNextMillis(_lastTimestamp);
                     }
                 }
@@ -115,8 +114,16 @@ namespace JTone.Core.Helper
             }
         }
 
-        // 防止产生的时间比之前的时间还要小（由于NTP回拨等问题）,保持增量的趋势.
-        protected virtual long TilNextMillis(long lastTimestamp)
+
+        /// <summary>
+        /// 防止产生的时间比之前的时间还要小（由于NTP回拨等问题）,保持增量的趋势.
+        /// </summary>
+        /// <param name="lastTimestamp"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// 只能解决单机时钟回拨问题，不能保证全数据中心整体是趋势递增的
+        /// </remarks>
+        private long TilNextMillis(long lastTimestamp)
         {
             var timestamp = TimeGen();
             while (timestamp <= lastTimestamp)
@@ -126,8 +133,12 @@ namespace JTone.Core.Helper
             return timestamp;
         }
 
-        // 获取当前的时间戳
-        protected virtual long TimeGen()
+
+        /// <summary>
+        /// 获取当前的时间戳
+        /// </summary>
+        /// <returns></returns>
+        private long TimeGen()
         {
             return (long)(DateTime.UtcNow - BaseUtcTime).TotalMilliseconds;
         }

@@ -408,3 +408,4 @@ UploadX/
 /src/JTone.Core/bin
 bin
 obj
+/.vs
