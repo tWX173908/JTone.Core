@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 
 namespace JTone.Core.Helper
@@ -21,7 +22,7 @@ namespace JTone.Core.Helper
 
 
     /// <summary>
-    /// 雪花算法
+    /// 雪花算法 TODO
     /// </summary>
     /// <remarks>
     /// 其核心思想是：
@@ -30,7 +31,7 @@ namespace JTone.Core.Helper
     /// 12bit作为毫秒内的流水号（意味着每个节点在每毫秒可以产生 4096 个 ID），
     /// 最后还有一个符号位，永远是0。
     /// </remarks>
-    public class SnowFlakeIdWorker
+    public class SnowFlakeIdHelper
     {
         //UTC基准时间
         private static readonly DateTime BaseUtcTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -61,7 +62,13 @@ namespace JTone.Core.Helper
         public long WorkerId { get; protected set; }
         public long DatacenterId { get; protected set; }
 
-        public SnowFlakeIdWorker(long workerId, long datacenterId, long sequence = 0L)
+
+        /// <summary>
+        /// 构造
+        /// </summary>
+        /// <param name="workerId"></param>
+        /// <param name="datacenterId"></param>
+        public SnowFlakeIdHelper(long workerId, long datacenterId)
         {
             if (workerId > MaxWorkerId || workerId < 0)
             {
@@ -75,7 +82,6 @@ namespace JTone.Core.Helper
 
             WorkerId = workerId;
             DatacenterId = datacenterId;
-            _sequence = sequence;
         }
 
         readonly object _lock = new object();
@@ -141,6 +147,58 @@ namespace JTone.Core.Helper
         private long TimeGen()
         {
             return (long)(DateTime.UtcNow - BaseUtcTime).TotalMilliseconds;
+        }
+    }
+
+
+    /// <summary>
+    /// 有序GuiId
+    /// </summary>
+    /// <remarks>
+    /// 分片：
+    /// 一致性HASH
+    /// 区间范围分片
+    /// 时间范围分片
+    /// 目录分片（额外维护查找表）
+    /// 分区：
+    /// 时间范围分区，归档
+    /// </remarks>
+    public class SequentialGuidHelper
+    {
+        private static long _counter;
+
+        /// <summary>
+        /// 生产id
+        /// </summary>
+        /// <returns></returns>
+        public static string NextId()
+        {
+            var guid = Guid.NewGuid().ToByteArray();
+            var ticks = BitConverter.GetBytes(GetTicks());
+
+            if (!BitConverter.IsLittleEndian)
+                Array.Reverse(ticks);
+
+            return new Guid(new[]
+                {
+                    ticks[1], ticks[0], ticks[7], ticks[6],
+                    ticks[5], ticks[4], ticks[3], ticks[2],
+                    guid[0], guid[1], guid[2], guid[3],
+                    guid[4], guid[5], guid[6], guid[7]
+                }).ToString();
+        }
+
+
+        /// <summary>
+        /// 获取时间戳
+        /// </summary>
+        /// <returns></returns>
+        private static long GetTicks()
+        {
+            if (_counter == 0)
+                _counter = DateTime.UtcNow.Ticks;
+
+            return Interlocked.Increment(ref _counter);
         }
     }
 }
