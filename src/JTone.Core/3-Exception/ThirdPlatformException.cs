@@ -1,17 +1,17 @@
 ﻿
 
-namespace JTone.Core.Exception
+namespace JTone.Core
 {
     /// <summary>
-    /// 仓储层异常
+    /// 第三方平台异常
     /// </summary>
-    public class RepositoryException : System.Exception
+    public class ThirdPlatformException : System.Exception
     {
         /// <summary>
         /// 构造
         /// </summary>
         /// <param name="message"></param>
-        public RepositoryException(string message)
+        public ThirdPlatformException(string message)
             : base(message)
         {
 

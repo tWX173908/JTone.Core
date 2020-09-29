@@ -2,10 +2,10 @@
 using System.Threading;
 
 
-namespace JTone.Core.Helper
+namespace JTone.Core
 {
     /// <summary>
-    /// Id生成
+    /// Id生成 TODO
     /// </summary>
     /// <remarks>
     /// 高并发，整形趋势递增，可读
@@ -17,7 +17,51 @@ namespace JTone.Core.Helper
     /// </remarks>
     public class TimeIdHelper
     {
+        /// <summary>
+        /// 毫秒计数器
+        /// </summary>
+        private static long _sequence;
 
+        //数据库
+        private static long _workId;
+        public static long WorkId {
+            get => _workId;
+            set
+            {
+                if (value > 10)
+                {
+                    throw new  ArgumentOutOfRangeException(nameof(WorkId));
+                }
+
+                _workId = value;
+            }
+        }
+
+        /// <summary>
+        /// 获取新的ID
+        /// </summary>
+        /// <returns></returns>
+        public static long NewId()
+        {
+            return LongTime(DateTime.Now) * 1000 + Interlocked.Increment(ref _sequence);
+        }
+
+
+        /// <summary>
+        /// 时间的长整型表示
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        private static long LongTime(DateTime time)
+        {
+            return time.Millisecond +
+                   time.Second * 1000L +
+                   time.Minute * 100000L +
+                   time.Hour * 10000000L +
+                   time.Day * 1000000000L +
+                   time.Month * 100000000000L +
+                   time.Year % 100 * 10000000000000L;
+        }
     }
 
 
@@ -152,7 +196,7 @@ namespace JTone.Core.Helper
 
 
     /// <summary>
-    /// 有序GuiId
+    /// 有序GuiId TODO
     /// </summary>
     /// <remarks>
     /// 分片：

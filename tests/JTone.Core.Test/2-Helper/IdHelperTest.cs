@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JTone.Core.Helper;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 
@@ -11,6 +10,56 @@ namespace JTone.Core.Test
     [TestClass]
     public class IdHelperTest
     {
+        /// <summary>
+        /// Ê±¼ä´Áid
+        /// </summary>
+        [TestMethod]
+        public void TimeIdHelperTest()
+        {
+            for (int i = 0; i < 100000; i++)
+            {
+                Console.WriteLine(TimeIdHelper.NewId());
+            }
+
+            //var t1Result = new List<long>();
+            //var t1 = Task.Run(() =>
+            //{
+            //    var i = 0;
+            //    while (i++ < 100000)
+            //    {
+            //        t1Result.Add(TimeIdHelper.NewId());
+            //    }
+            //});
+
+            //var t2Result = new List<long>();
+            //var t2 = Task.Run(() =>
+            //{
+            //    var i = 0;
+            //    while (i++ < 100000)
+            //    {
+            //        t2Result.Add(TimeIdHelper.NewId());
+            //    }
+            //});
+
+            //var t3Result = new List<long>();
+            //var t3 = Task.Run(() =>
+            //{
+            //    var i = 0;
+            //    while (i++ < 100000)
+            //    {
+            //        t3Result.Add(TimeIdHelper.NewId());
+            //    }
+            //});
+
+            //Task.WaitAll(t1, t2, t3);
+
+            //Assert.IsTrue(!t1Result.Intersect(t2Result).Intersect(t3Result).Any());
+        }
+
+
+        /// <summary>
+        /// Ñ©»¨id
+        /// </summary>
         [TestMethod]
         public void SnowFlakeHelperTest()
         {

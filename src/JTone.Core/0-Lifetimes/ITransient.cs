@@ -1,6 +1,6 @@
 ﻿
 
-namespace JTone.Core.Lifetimes
+namespace JTone.Core
 {
     /// <summary>
     /// 瞬时依赖

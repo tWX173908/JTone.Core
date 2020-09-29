@@ -1,6 +1,6 @@
 ﻿
 
-namespace JTone.Core.Exception
+namespace JTone.Core
 {
     /// <summary>
     /// 业务异常
