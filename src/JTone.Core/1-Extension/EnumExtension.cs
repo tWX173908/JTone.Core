@@ -26,7 +26,7 @@ namespace JTone.Core
         /// </summary>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public static string Des(this Enum instance)
+        public static string Desc(this Enum instance)
         {
             return instance.GetType().GetCustomAttribute<DescriptionAttribute>()?.Description ?? nameof(instance);
         }

@@ -9,9 +9,9 @@ namespace JTone.Core.Test
         [TestMethod]
         public void GetDes()
         {
-            var text = TestEnum.Default.Des();
+            var text = TestEnum.Default.Text();
 
-            var des = TestDescEnum.Default.Des();
+            var des = TestDescEnum.Default.Desc();
         }
     }
 
