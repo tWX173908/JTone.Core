@@ -1,49 +1,50 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Threading;
 
 
 namespace JTone.Core
 {
     /// <summary>
-    /// Id生成 TODO
+    /// 时间Id生成
     /// </summary>
     /// <remarks>
     /// 高并发，整形趋势递增，可读
-    /// 其核心思想是：
-    /// 使用41bit作为毫秒数，
-    /// 10bit作为机器的ID（5个bit是数据中心，5个bit的机器ID），
-    /// 12bit作为毫秒内的流水号（意味着每个节点在每毫秒可以产生 4096 个 ID），
-    /// 最后还有一个符号位，永远是0。
+    /// 其核心思想是：2020年10月29日23点59分59秒999毫秒 表示为
+    /// 10 29 20 23 59 59 999  + 9位服务器 + 单毫秒最大999
+    /// 月 日 年 时 分 秒 毫秒
     /// </remarks>
-    public class TimeIdHelper
+    public class TimeId
     {
         /// <summary>
         /// 毫秒计数器
         /// </summary>
-        private static long _sequence;
+        private long _sequence;
 
-        //数据库
-        private static long _workId;
-        public static long WorkId {
-            get => _workId;
-            set
-            {
-                if (value > 10)
-                {
-                    throw new  ArgumentOutOfRangeException(nameof(WorkId));
-                }
+        //工作线程
+        private readonly long _workId;
 
-                _workId = value;
-            }
+        //每毫秒最大值
+        private const long PerMillisecond = 1000;
+
+        //工作线程设置
+        public const long MaxWorkId = 10;
+        public const long MinWorkId = 0;
+
+        public TimeId(long workId = 0)
+        {
+            _workId = workId;
         }
 
         /// <summary>
-        /// 获取新的ID
+        /// 生成ID
         /// </summary>
         /// <returns></returns>
-        public static long NewId()
+        public long NewId()
         {
-            return LongTime(DateTime.Now) * 1000 + Interlocked.Increment(ref _sequence);
+            Interlocked.Increment(ref _sequence);
+            _sequence = 1000 * (_workId % MaxWorkId) + _sequence % PerMillisecond;
+            return LongTime(DateTime.Now) * 10000 + _sequence;
         }
 
 
@@ -52,21 +53,56 @@ namespace JTone.Core
         /// </summary>
         /// <param name="time"></param>
         /// <returns></returns>
-        private static long LongTime(DateTime time)
+        private long LongTime(DateTime time)
         {
             return time.Millisecond +
                    time.Second * 1000L +
                    time.Minute * 100000L +
                    time.Hour * 10000000L +
-                   time.Day * 1000000000L +
-                   time.Month * 100000000000L +
-                   time.Year % 100 * 10000000000000L;
+                   time.Year % 100 * 1000000000L +
+                   time.Day *        100000000000L +
+                   time.Month *      10000000000000L;
         }
     }
 
 
     /// <summary>
-    /// 雪花算法 TODO
+    /// 时间Id帮助类
+    /// </summary>
+    public class TimeIdHelper
+    {
+        private static readonly ConcurrentDictionary<long, TimeId> TimeIds = new ConcurrentDictionary<long, TimeId>();
+
+
+        /// <summary>
+        /// 生成ID
+        /// </summary>
+        /// <param name="workId"></param>
+        /// <returns></returns>
+        public static long NewId(long workId = 1)
+        {
+            if (workId <= TimeId.MinWorkId || workId >= TimeId.MaxWorkId)
+            {
+                throw new ArgumentOutOfRangeException(nameof(workId));
+            }
+
+            if (TimeIds.ContainsKey(workId))
+            {
+                return TimeIds[workId].NewId();
+            }
+
+            if (TimeIds.TryAdd(workId, new TimeId(workId)))
+            {
+                return TimeIds[workId].NewId();
+            }
+
+            return 0;
+        }
+    }
+
+
+    /// <summary>
+    /// 雪花算法
     /// </summary>
     /// <remarks>
     /// 其核心思想是：
@@ -196,53 +232,66 @@ namespace JTone.Core
 
 
     /// <summary>
-    /// 有序GuiId TODO
+    /// 有序GuiId 
     /// </summary>
     /// <remarks>
-    /// 分片：
-    /// 一致性HASH
-    /// 区间范围分片
-    /// 时间范围分片
-    /// 目录分片（额外维护查找表）
-    /// 分区：
-    /// 时间范围分区，归档
+    /// https://stackoverflow.com/questions/1752004/sequential-guid-generator
     /// </remarks>
-    public class SequentialGuidHelper
+    public class SequentialGuid
     {
-        private static long _counter;
+        private Guid _currentGuid;
+        public Guid CurrentGuid => _currentGuid;
 
-        /// <summary>
-        /// 生产id
-        /// </summary>
-        /// <returns></returns>
-        public static string NextId()
+        private static readonly object Lock = new object();
+
+        public SequentialGuid()
         {
-            var guid = Guid.NewGuid().ToByteArray();
-            var ticks = BitConverter.GetBytes(GetTicks());
-
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ticks);
-
-            return new Guid(new[]
-                {
-                    ticks[1], ticks[0], ticks[7], ticks[6],
-                    ticks[5], ticks[4], ticks[3], ticks[2],
-                    guid[0], guid[1], guid[2], guid[3],
-                    guid[4], guid[5], guid[6], guid[7]
-                }).ToString();
+            _currentGuid = Guid.NewGuid();
         }
 
-
-        /// <summary>
-        /// 获取时间戳
-        /// </summary>
-        /// <returns></returns>
-        private static long GetTicks()
+        public static SequentialGuid operator ++(SequentialGuid sequentialGuid)
         {
-            if (_counter == 0)
-                _counter = DateTime.UtcNow.Ticks;
+            lock (Lock)
+            {
+                var bytes = sequentialGuid._currentGuid.ToByteArray();
+                for (var mapIndex = 0; mapIndex < 16; mapIndex++)
+                {
+                    var bytesIndex = SqlOrderMap[mapIndex];
+                    bytes[bytesIndex]++;
+                    if (bytes[bytesIndex] != 0)
+                    {
+                        break; // No need to increment more significant bytes
+                    }
+                }
+                sequentialGuid._currentGuid = new Guid(bytes);
+                return sequentialGuid;
+            }
+        }
 
-            return Interlocked.Increment(ref _counter);
+        private static int[] _sqlOrderMap;
+        private static int[] SqlOrderMap
+        {
+            get
+            {
+                return _sqlOrderMap ?? (_sqlOrderMap = new []
+                {
+                    3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10
+                });
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// 有序GuiId帮助类
+    /// </summary>
+    public class SequentialGuidHelper
+    {
+        private static SequentialGuid _sequentialGuid = new SequentialGuid();
+
+        public static string NewId()
+        {
+            return (_sequentialGuid++).CurrentGuid.ToString();
         }
     }
 }

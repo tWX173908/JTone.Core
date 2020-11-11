@@ -16,44 +16,39 @@ namespace JTone.Core.Test
         [TestMethod]
         public void TimeIdHelperTest()
         {
-            for (int i = 0; i < 100000; i++)
+            var t1Result = new List<long>();
+            var t1 = Task.Run(() =>
             {
-                Console.WriteLine(TimeIdHelper.NewId());
-            }
+                var i = 0;
+                while (i++ < 100000)
+                {
+                    t1Result.Add(TimeIdHelper.NewId());
+                }
+            });
 
-            //var t1Result = new List<long>();
-            //var t1 = Task.Run(() =>
-            //{
-            //    var i = 0;
-            //    while (i++ < 100000)
-            //    {
-            //        t1Result.Add(TimeIdHelper.NewId());
-            //    }
-            //});
+            var t2Result = new List<long>();
+            var t2 = Task.Run(() =>
+            {
+                var i = 0;
+                while (i++ < 100000)
+                {
+                    t2Result.Add(TimeIdHelper.NewId(2));
+                }
+            });
 
-            //var t2Result = new List<long>();
-            //var t2 = Task.Run(() =>
-            //{
-            //    var i = 0;
-            //    while (i++ < 100000)
-            //    {
-            //        t2Result.Add(TimeIdHelper.NewId());
-            //    }
-            //});
+            var t3Result = new List<long>();
+            var t3 = Task.Run(() =>
+            {
+                var i = 0;
+                while (i++ < 100000)
+                {
+                    t3Result.Add(TimeIdHelper.NewId(3));
+                }
+            });
 
-            //var t3Result = new List<long>();
-            //var t3 = Task.Run(() =>
-            //{
-            //    var i = 0;
-            //    while (i++ < 100000)
-            //    {
-            //        t3Result.Add(TimeIdHelper.NewId());
-            //    }
-            //});
+            Task.WaitAll(t1, t2, t3);
 
-            //Task.WaitAll(t1, t2, t3);
-
-            //Assert.IsTrue(!t1Result.Intersect(t2Result).Intersect(t3Result).Any());
+            Assert.IsTrue(!t1Result.Intersect(t2Result).Intersect(t3Result).Any());
         }
 
 
@@ -108,7 +103,10 @@ namespace JTone.Core.Test
         [TestMethod]
         public void SequentialGuidHelperTest()
         {
-            var t = SequentialGuidHelper.NextId();
+            for (var i = 0; i < 10000; ++i)
+            {
+                Console.WriteLine(SequentialGuidHelper.NewId());
+            }
 
             var t1Result = new List<string>();
             var t1 = Task.Run(() =>
@@ -116,7 +114,7 @@ namespace JTone.Core.Test
                 var i = 0;
                 while (i++ < 100000)
                 {
-                    t1Result.Add(SequentialGuidHelper.NextId());
+                    t1Result.Add(SequentialGuidHelper.NewId());
                 }
             });
 
@@ -126,7 +124,7 @@ namespace JTone.Core.Test
                 var i = 0;
                 while (i++ < 100000)
                 {
-                    t2Result.Add(SequentialGuidHelper.NextId());
+                    t2Result.Add(SequentialGuidHelper.NewId());
                 }
             });
 
@@ -136,7 +134,7 @@ namespace JTone.Core.Test
                 var i = 0;
                 while (i++ < 100000)
                 {
-                    t3Result.Add(SequentialGuidHelper.NextId());
+                    t3Result.Add(SequentialGuidHelper.NewId());
                 }
             });
 
