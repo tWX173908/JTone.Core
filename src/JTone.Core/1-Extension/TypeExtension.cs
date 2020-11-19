@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 
@@ -11,7 +12,7 @@ namespace JTone.Core
     /// </summary>
     public static class TypeExtension
     {
-        private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> TypeProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>>();
+        private static readonly ConcurrentDictionary<RuntimeTypeHandle, List<PropertyInfo>> TypeProperties = new ConcurrentDictionary<RuntimeTypeHandle, List<PropertyInfo>>();
 
         //基本类型
         private static readonly List<Type> SimpleTypes = new List<Type>
@@ -53,14 +54,14 @@ namespace JTone.Core
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static IEnumerable<PropertyInfo> GetTypeProperties(this Type type)
+        public static List<PropertyInfo> GetTypeProperties(this Type type)
         {
             if (TypeProperties.TryGetValue(type.TypeHandle, out var typePropertyInfos))
             {
                 return typePropertyInfos;
             }
 
-            var props = type.GetProperties();
+            var props = type.GetProperties().ToList();
 
             TypeProperties[type.TypeHandle] = props;
             return props;
