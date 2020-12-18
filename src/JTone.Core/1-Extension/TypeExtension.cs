@@ -13,6 +13,7 @@ namespace JTone.Core
     public static class TypeExtension
     {
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, List<PropertyInfo>> TypeProperties = new ConcurrentDictionary<RuntimeTypeHandle, List<PropertyInfo>>();
+        private static readonly ConcurrentDictionary<RuntimeTypeHandle, List<FieldInfo>> TypeFields = new ConcurrentDictionary<RuntimeTypeHandle, List<FieldInfo>>();
 
         //基本类型
         private static readonly List<Type> SimpleTypes = new List<Type>
@@ -67,5 +68,23 @@ namespace JTone.Core
             return props;
         }
 
+
+        /// <summary>
+        /// 获取类型字段信息
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static List<FieldInfo> GetTypeFields(this Type type)
+        {
+            if (TypeFields.TryGetValue(type.TypeHandle, out var typeFields))
+            {
+                return typeFields;
+            }
+
+            var fields = type.GetFields().ToList();
+
+            TypeFields[type.TypeHandle] = fields;
+            return fields;
+        }
     }
 }
