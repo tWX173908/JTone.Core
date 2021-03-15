@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="1-Extension\ListExtension.cs~RF2912eaaa.TMP" />
     <None Remove="1-Extension\StringExtension.cs~RFc926194.TMP" />
     <None Remove="1-Extension\StringExtension.cs~RFc954756.TMP" />
   </ItemGroup>
